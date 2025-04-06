@@ -2,7 +2,7 @@ import About from "./About";
 import Profiles from "./Profiles";
 import Footer from "./Footer";
 import { FaClock, FaGift, FaStar } from "react-icons/fa";
-import Collapsible from "./Collapsible";
+
 
 import Menu from "./Menu"; 
 
