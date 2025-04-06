@@ -56,22 +56,6 @@ const MainContent = () => {
       </div>
     </div>
     <Footer />
-
-    {/* Mobile view */}
-    <div className="block sm:hidden space-y-6 px-4">
-    <Collapsible title="About Us">
-        <About />
-    </Collapsible>
-
-    <Collapsible title="Meet the Crew">
-        <Profiles />
-    </Collapsible>
-
-    <Collapsible title="Our Menu">
-        <Menu />
-    </Collapsible>
-    </div>
-
     </>
   );
 };
