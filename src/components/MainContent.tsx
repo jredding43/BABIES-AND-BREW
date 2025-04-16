@@ -4,8 +4,6 @@ import Footer from "./Footer";
 import { FaClock, FaGift, FaStar } from "react-icons/fa";
 
 
-import Menu from "./Menu"; 
-
 const MainContent = () => {
   return (
     <>
@@ -52,7 +50,6 @@ const MainContent = () => {
 
         </div>
         <Profiles />
-        <Menu />
       </div>
     </div>
     <Footer />
