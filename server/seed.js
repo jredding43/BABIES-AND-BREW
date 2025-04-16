@@ -21,6 +21,7 @@ const seed = async () => {
       DELETE FROM styles;
       DELETE FROM drink_shots;
       DELETE FROM shots;
+      DELETE FROM drink_type_sizes;
     `);
 
     console.log(" Seeding started...");
@@ -54,7 +55,7 @@ const seed = async () => {
       Espresso: ["Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha", "Breve", "Dirty Chai", "Drip Coffee", "Select A Drink"],
       "Energy Drink": ["Lotus", "Redbull Spritzer"],
       "Non-Coffee": ["Italian Soda", "Hot Chocolate", "Lemonade", "Smoothie"],
-      Tea: ["Chai", "Oregon", "Jet Tea", "London Fog", "Matcha Latte"],
+      Tea: ["Tea", "Chai", "London Fog", "Matcha Latte"],
       Other: []
     };
 
@@ -78,28 +79,6 @@ const seed = async () => {
       }
     }
 
-    // --- Sample Drinks ---
-    const drinks = [
-      { name: "Vanilla Latte", type: "Latte", price: 4.00 },
-      { name: "Caramel Mocha", type: "Mocha", price: 4.50 },
-      { name: "Peach Lotus", type: "Lotus", price: 5.00 },
-    ];
-
-    const drinkIds = {};
-    for (const drink of drinks) {
-      const res = await pool.query(
-        "INSERT INTO drinks (drink_type_id, name, base_price) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING id",
-        [drinkTypeIds[drink.type], drink.name, drink.price]
-      );
-
-      if (res.rows.length > 0) {
-        drinkIds[drink.name] = res.rows[0].id;
-      } else {
-        const existing = await pool.query("SELECT id FROM drinks WHERE name = $1", [drink.name]);
-        drinkIds[drink.name] = existing.rows[0].id;
-      }
-    }
-
     // --- Sizes ---
     const sizes = ["12oz", "16oz", "20oz", "24oz", "32oz"];
     const sizeIds = {};
@@ -117,41 +96,28 @@ const seed = async () => {
       }
     }
 
-    // --- Sizes Other ---
-    const size_other = ["12oz", "16oz", "20oz", "24oz", "32oz"];
-    const size_otherIds = {};
-    for (const size of size_other) {
-      const res = await pool.query(
-        "INSERT INTO size_other (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id",
-        [size]
-      );
-
-      if (res.rows.length > 0) {
-        size_otherIds[size] = res.rows[0].id;
-      } else {
-        const existing = await pool.query("SELECT id FROM size_other WHERE name = $1", [size]);
-        size_otherIds[size] = existing.rows[0].id;
-      }
-    }
-
-    // --- Drink Sizes ---
-    await pool.query(
-      "INSERT INTO drink_sizes (drink_id, size_id, price_adjustment) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-      [drinkIds["Vanilla Latte"], sizeIds["12oz D"], 0.00]
-    );
-    await pool.query(
-      "INSERT INTO drink_sizes (drink_id, size_id, price_adjustment) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-      [drinkIds["Vanilla Latte"], sizeIds["16oz D"], 0.50]
-    );
 
     // --- Milk Options ---
-    const milks = ["Whole", "2% Milk", "Almond Milk", "Oat Milk", "Soy Milk", "Heavy Cream", "Lotus Cream", "None"];
+    const milks = [
+      { name: "Whole", price_adjustment: 0.00 },
+      { name: "2% Milk", price_adjustment: 0.00 },
+      { name: "Almond Milk + $0.75", price_adjustment: 0.75 },
+      { name: "Oat Milk + $0.75", price_adjustment: 0.75 },
+      { name: "Soy Milk + $0.75", price_adjustment: 0.75 },
+      { name: "Heavy Cream + $1.00", price_adjustment: 1.00 },
+      { name: "Lotus Cream + $0.50", price_adjustment: 0.50 },
+      { name: "None", price_adjustment: 0.00 }
+    ];
+
     for (const milk of milks) {
       await pool.query(
-        "INSERT INTO milk_options (name) VALUES ($1) ON CONFLICT (name) DO NOTHING",
-        [milk]
+        `INSERT INTO milk_options (name, price_adjustment)
+        VALUES ($1, $2)
+        ON CONFLICT (name) DO UPDATE SET price_adjustment = EXCLUDED.price_adjustment`,
+        [milk.name, milk.price_adjustment]
       );
     }
+
 
     // --- Styles ---
     const styles = ["Hot", "Iced", "Blended"];
@@ -190,12 +156,14 @@ const seed = async () => {
       "Salted Caramel", "Strawberry", "Tangerine", "Toasted Marshmallow", "Toffee Nut",
       "Vanilla", "Watermelon"
     ];
+    
     for (const flavor of flavors) {
       await pool.query(
-        "INSERT INTO flavors (name) VALUES ($1) ON CONFLICT (name) DO NOTHING",
-        [flavor]
+        "INSERT INTO flavors (name, price_adjustment) VALUES ($1, $2) ON CONFLICT (name) DO UPDATE SET price_adjustment = EXCLUDED.price_adjustment",
+        [flavor, 0.5]
       );
     }
+    
 
     // --- Options ---
     const options = [
@@ -209,6 +177,45 @@ const seed = async () => {
       );
     }
 
+    // --- Drink Type + Size Prices ---
+  const drink_type_sizes = [
+    { drink: "Americano", prices: { "12oz": 4.00, "16oz": 4.25, "20oz": 5.00, "24oz": 5.75, "32oz": 6.00 } },
+    { drink: "Latte", prices: { "12oz": 5.00, "16oz": 5.25, "20oz": 6.00, "24oz": 6.75, "32oz": 7.00 } },
+    { drink: "Mocha", prices: { "12oz": 5.25, "16oz": 5.50, "20oz": 6.25, "24oz": 7.00, "32oz": 7.25 } },
+    { drink: "Signature Mocha", prices: { "12oz": 5.75, "16oz": 6.00, "20oz": 6.75, "24oz": 7.50, "32oz": 8.00 } },
+    { drink: "Signature Latte", prices: { "12oz": 5.50, "16oz": 5.75, "20oz": 6.50, "24oz": 7.25, "32oz": 7.75 } },
+    { drink: "Breve", prices: { "12oz": 5.75, "16oz": 6.00, "20oz": 6.75, "24oz": 7.50, "32oz": 7.75 } },
+    { drink: "Dirty Chai", prices: { "12oz": 5.75, "16oz": 6.00, "20oz": 6.75, "24oz": 7.50, "32oz": 8.00 } },
+    { drink: "Drip Coffee", prices: { "12oz": 2.75, "16oz": 3.00, "20oz": 3.25, "24oz": 3.5 } },
+    { drink: "Chai", prices: { "12oz": 4.75, "16oz": 5.00, "20oz": 5.25, "24oz": 5.50, "32oz": 6.00 } },
+    { drink: "Matcha Latte", prices: { "12oz": 4.50, "16oz": 4.75, "20oz": 5.00, "24oz": 5.25, "32oz": 5.75 } },
+    { drink: "Hot Chocolate", prices: { "12oz": 4.00, "16oz": 4.25, "20oz": 4.50, "24oz": 4.75, "32oz": 5.25 } },
+    { drink: "Lotus", prices: { "12oz": 5.25, "16oz": 5.50, "20oz": 5.75, "24oz": 6.00, "32oz": 6.75 } },
+    { drink: "Redbull Spritzer", prices: { "12oz": 5.50, "16oz": 5.75, "20oz": 6.00, "24oz": 6.25, "32oz": 7.25 } },
+    { drink: "Italian Soda", prices: { "12oz": 3.75, "16oz": 4.00, "20oz": 4.25, "24oz": 4.50, "32oz": 5.00 } },
+    { drink: "Smoothie", prices: { "12oz": 5.25, "16oz": 5.50, "20oz": 5.75, "24oz": 6.00, "32oz": 6.50 } },
+    { drink: "Lemonade", prices: { "12oz": 2.75, "16oz": 3.00, "20oz": 3.25, "24oz": 3.50, "32oz": 4.00 } },
+    { drink: "London Fog", prices: { "12oz": 4.25, "16oz": 4.50, "20oz": 4.75, "24oz": 5.00, "32oz": 5.50 } },
+    { drink: "Tea", prices: { "12oz": 2.75, "16oz": 3.00, "20oz": 3.25, "24oz": 3.50, "32oz": 4.00 } },
+  ];
+
+  const drinkIds = {};
+  for (const entry of drink_type_sizes) {
+    const drinkTypeId = drinkTypeIds[entry.drink];
+  
+    for (const [sizeName, price] of Object.entries(entry.prices)) {
+      const sizeId = sizeIds[sizeName];
+  
+      await pool.query(
+        "INSERT INTO drink_type_sizes (drink_type_id, size_id, price) VALUES ($1, $2, $3)",
+        [drinkTypeId, sizeId, price]
+      );
+    }
+  }
+  
+
+
+
     console.log(" Seeding complete.");
     process.exit();
   } catch (err) {
@@ -217,4 +224,8 @@ const seed = async () => {
   }
 };
 
-seed();
+
+(async () => {
+  await seed();
+})();
+

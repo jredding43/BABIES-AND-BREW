@@ -69,8 +69,42 @@ const registerTableEndpoint = (table) => {
   "energy_flavorings",
   "orders",
   "order_items",
-  "shots"
+  "shots",
+  "drink_type_sizes"
 ].forEach(registerTableEndpoint);
+
+// --- GET: Price from drink_type_sizes ---
+app.get("/api/pricing", async (req, res) => {
+  const { drink_type_id, size } = req.query;
+
+  if (!drink_type_id || !size) {
+    return res.status(400).json({ error: "Missing drink_type_id or size" });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT dts.price
+      FROM drink_type_sizes dts
+      JOIN sizes s ON dts.size_id = s.id
+      WHERE dts.drink_type_id = $1 AND s.name = $2
+      LIMIT 1
+      `,
+      [drink_type_id, size]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Price not found" });
+    }
+
+    res.json({ price: parseFloat(result.rows[0].price) });
+  } catch (err) {
+    console.error("Pricing fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch price" });
+  }
+});
+
+
 
 // --- Start Server ---
 app.listen(port, () => {

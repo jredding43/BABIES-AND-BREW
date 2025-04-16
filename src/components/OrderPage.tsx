@@ -65,7 +65,12 @@ const OrderPage: React.FC = () => {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
   const [orderItems, setOrderItems] = useState<any[]>([]);
-  const [isCheckoutStarted, setIsCheckoutStarted] = useState(false);
+  const [, setIsCheckoutStarted] = useState(false);
+  const [price, setPrice] = useState<number | null>(null);
+  const [basePrice, setBasePrice] = useState<number | null>(null);
+  const [totalPrice, setTotalPrice] = useState<number | null>(null);
+
+
 
 
   const drinkStyleOptions: Record<string, string[]> = {
@@ -125,6 +130,51 @@ const OrderPage: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchPrice = async () => {
+      if (selectedDrinkTypeId && selectedSize) {
+        try {
+          const res = await fetch(
+            `http://localhost:5000/api/pricing?drink_type_id=${selectedDrinkTypeId}&size=${encodeURIComponent(selectedSize)}`
+          );
+          const data = await res.json();
+          setBasePrice(data.price);
+        } catch (err) {
+          console.error("Failed to fetch price", err);
+          setBasePrice(null);
+        }
+      } else {
+        setBasePrice(null);
+      }
+    };
+    fetchPrice();
+  }, [selectedDrinkTypeId, selectedSize]);
+  
+  useEffect(() => {
+    if (basePrice === null) {
+      setTotalPrice(null);
+      return;
+    }
+  
+    let total = basePrice;
+  
+    // Milk
+    const milk = milkOptions.find((m) => m.name === selectedMilk);
+    if (milk?.price_adjustment) {
+      total += Number(milk.price_adjustment);
+    }
+  
+    // Flavors
+    const extraFlavors = Math.max(0, selectedFlavors.length - 2);
+    
+    total += extraFlavors * 0.5;
+  
+    setTotalPrice(Number(total.toFixed(2)));
+  }, [basePrice, selectedMilk, selectedFlavors, milkOptions]);
+  
+      
+
+
   const filteredTypes = selectedCategoryId
     ? drinkTypes.filter((type) => type.category_id === selectedCategoryId)
     : [];
@@ -147,6 +197,7 @@ const OrderPage: React.FC = () => {
           shots,
           flavors: selectedFlavorObjects,
           options: selectedOptionObjects,
+          price: totalPrice,
         };
       
         setOrderItems((prevItems) => [...prevItems, newOrderItem]);
@@ -162,6 +213,31 @@ const OrderPage: React.FC = () => {
         setSelectedStyle(null);
       };
 
+
+      //Delete order items
+      const handleDeleteOrderItem = (index: number) => {
+        setOrderItems((prev) => prev.filter((_, i) => i !== index));
+      };
+      
+      //Edit order items
+      const handleEditOrderItem = (index: number) => {
+        const item = orderItems[index];
+      
+        setSelectedCategoryId(item.category?.id || null);
+        setSelectedDrinkTypeId(item.drinkType?.id || null);
+        setSelectedSize(item.size || null);
+        setSelectedMilk(item.milk?.name || null);
+        setSelectedStyle(item.style?.name || null);
+        setSelectedShots(item.shots?.id || null);
+        setSelectedFlavors(item.flavors.map((f: any) => f.id));
+        setSelectedOptions(item.options.map((o: any) => o.id));
+      
+        // Optionally remove item from cart so it can be replaced after editing
+        setOrderItems((prev) => prev.filter((_, i) => i !== index));
+      };
+      
+
+    //View shots or hide on choice
       const selectedDrink = drinkTypes.find((dt) => dt.id === selectedDrinkTypeId);
       const espressoDrinks = [
         "Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha",
@@ -169,6 +245,7 @@ const OrderPage: React.FC = () => {
       ];
       const requiresShots = selectedDrink ? espressoDrinks.includes(selectedDrink.name) : false;
       
+    //Add to cart button
       const isOrderReady =
         selectedCategoryId !== null &&
         selectedDrinkTypeId !== null &&
@@ -176,10 +253,6 @@ const OrderPage: React.FC = () => {
         selectedStyle !== null &&
         selectedMilk !== null &&
         (!requiresShots || selectedShots !== null); 
-      
-   
-
-      
 
   return (
     <div className="max-w-xl mx-auto p-4">
@@ -268,9 +341,14 @@ const OrderPage: React.FC = () => {
                 </button>
             ))}
             </div>
+
+            {typeof price === "number" && !isNaN(price) && (
+            <div className="text-lg font-semibold text-green-700">
+                Price: ${price.toFixed(2)}
+            </div>
+            )}
         </div>
         )}
-
 
         {/* 4. Style */}
         {selectedDrinkTypeId && (() => {
@@ -339,25 +417,48 @@ const OrderPage: React.FC = () => {
         <div>
             <h2 className="font-semibold mb-2">6. Choose Milk</h2>
             <div className="flex flex-wrap gap-2">
-            {milkOptions.map((milk) => (
+            {milkOptions.map((milk) => {
+                let priceLabel = "";
+                if (["Almond Milk", "Oat Milk", "Soy Milk"].includes(milk.name)) {
+                priceLabel = " (+$0.75)";
+                } else if (milk.name === "Lotus Cream") {
+                priceLabel = " (+$0.50)";
+                } else if (milk.name === "Heavy Cream") {
+                priceLabel = " (+$1.00)";
+                }
+
+                return (
                 <button
-                key={milk.id}
-                className={`px-4 py-2 rounded border ${
+                    key={milk.id}
+                    className={`px-4 py-2 rounded border ${
                     selectedMilk === milk.name ? "bg-pink-600 text-white" : "hover:bg-gray-100"
-                }`}
-                onClick={() => setSelectedMilk(milk.name)}
+                    }`}
+                    onClick={() => setSelectedMilk(milk.name)}
                 >
-                {milk.name}
+                    {milk.name}{priceLabel}
                 </button>
-            ))}
+                );
+            })}
             </div>
+
+            {typeof totalPrice === "number" && !isNaN(totalPrice) && (
+            <div className="text-lg font-semibold text-green-700">
+                Price: ${totalPrice.toFixed(2)}
+            </div>
+            )}
+
         </div>
         )}
+
 
         {/* 7. Flavors */}
         {selectedMilk && (
         <div>
-            <h2 className="font-semibold mb-2">7. Add Flavors</h2>
+            <h2 className="font-semibold">7. Add Flavors</h2>
+            <h3 className="italic mb-2">
+            2 flavors per drink included. $0.50 for each additional flavor.
+            </h3>
+
             <div className="max-h-48 overflow-y-auto border rounded p-2">
             {[...flavors]
                 .sort((a, b) => a.name.localeCompare(b.name))
@@ -378,8 +479,30 @@ const OrderPage: React.FC = () => {
                 </label>
                 ))}
             </div>
+
+            {selectedFlavors.length > 0 && (
+            <div className="mt-4 space-y-2">
+                <div className="font-semibold italic text-blue-700">
+                <strong>Selected Flavors:</strong>{" "}
+                {flavors
+                    .filter((f) => selectedFlavors.includes(f.id))
+                    .map((f) => f.name)
+                    .join(", ")}
+                </div>
+
+                {selectedFlavors.length > 2 && (
+                <div className="italic text-green-700">
+                    {selectedFlavors.length - 2} extra flavor
+                    {selectedFlavors.length - 2 > 1 ? "s" : ""} × $0.50 = $
+                    {((selectedFlavors.length - 2) * 0.5).toFixed(2)}
+                </div>
+                )}
+            </div>
+            )}
         </div>
         )}
+
+
 
         {/* 8. Extras */}
         {selectedFlavors.length > 0 && (
@@ -410,7 +533,7 @@ const OrderPage: React.FC = () => {
         {orderItems.length > 0 && (
         <div className="mt-6">
             <h2 className="text-lg font-bold mb-2">Current Order</h2>
-            <ul className="space-y-2">
+            <ul className="space-y-4">
             {orderItems.map((item, index) => {
                 const espressoDrinks = [
                 "Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha",
@@ -419,29 +542,44 @@ const OrderPage: React.FC = () => {
                 const isEspresso = item.drinkType && espressoDrinks.includes(item.drinkType.name);
 
                 return (
-                <li key={index} className="p-3 bg-gray-100 rounded">
+                <li key={index} className="p-4 bg-gray-100 rounded shadow">
                     <div>
                     <strong>{item.size}</strong> {item.drinkType?.name} ({item.category?.name})
                     </div>
                     <div>Style: {item.style?.name}</div>
                     <div>Milk: {item.milk?.name}</div>
-
-                    {isEspresso && (
-                    <div>Shot: {item.shots?.name}</div>
-                    )}
-
+                    {isEspresso && <div>Shot: {item.shots?.name}</div>}
                     {item.flavors.length > 0 && (
                     <div>Flavors: {item.flavors.map((f: any) => f.name).join(", ")}</div>
                     )}
                     {item.options.length > 0 && (
                     <div>Extras: {item.options.map((o: any) => o.name).join(", ")}</div>
                     )}
+                    <div className="font-semibold text-green-700 mt-1">
+                    Total: ${item.price?.toFixed(2)}
+                    </div>
+                    
+                    <div className="flex gap-2 mt-2">
+                    <button
+                        className="px-3 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-500"
+                        onClick={() => handleEditOrderItem(index)}
+                    >
+                        Edit
+                    </button>
+                    <button
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                        onClick={() => handleDeleteOrderItem(index)}
+                    >
+                        Delete
+                    </button>
+                    </div>
                 </li>
                 );
             })}
             </ul>
         </div>
         )}
+
 
         <button
         onClick={handleAddOrder}
