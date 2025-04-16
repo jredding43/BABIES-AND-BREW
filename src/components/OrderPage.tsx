@@ -65,9 +65,11 @@ const OrderPage: React.FC = () => {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([]);
 
   const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [isCheckoutStarted, setIsCheckoutStarted] = useState(false);
+
 
   const drinkStyleOptions: Record<string, string[]> = {
-    // Espresso can be any style
+    // Espresso 
     "Americano": ["Hot", "Iced"],
     "Latte": ["Hot", "Iced", "Blended"],
     "Signature Latte": ["Hot", "Iced", "Blended"],
@@ -85,7 +87,7 @@ const OrderPage: React.FC = () => {
     // Non-Coffee
     "Italian Soda": ["Iced", "Blended"],
     "Hot Chocolate": ["Hot"],
-    "Lemonade": ["Iced"],
+    "Lemonade": ["Iced", "Blended"],
     "Smoothie": ["Blended"],
   
     // Tea
@@ -160,13 +162,21 @@ const OrderPage: React.FC = () => {
         setSelectedStyle(null);
       };
 
-    const isOrderReady =
-    selectedCategoryId !== null &&
-    selectedDrinkTypeId !== null &&
-    selectedSize !== null &&
-    selectedStyle !== null &&
-    selectedShots !== null &&
-    selectedMilk !== null;
+      const selectedDrink = drinkTypes.find((dt) => dt.id === selectedDrinkTypeId);
+      const espressoDrinks = [
+        "Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha",
+        "Breve", "Dirty Chai", "Drip Coffee"
+      ];
+      const requiresShots = selectedDrink ? espressoDrinks.includes(selectedDrink.name) : false;
+      
+      const isOrderReady =
+        selectedCategoryId !== null &&
+        selectedDrinkTypeId !== null &&
+        selectedSize !== null &&
+        selectedStyle !== null &&
+        selectedMilk !== null &&
+        (!requiresShots || selectedShots !== null); 
+      
    
 
       
@@ -232,7 +242,19 @@ const OrderPage: React.FC = () => {
         {/* 3. Size */}
         {selectedDrinkTypeId && (
         <div>
-            <h2 className="font-semibold mb-2">3. Select Size</h2>
+            <h2 className="font-semibold">3. Select Size</h2>
+
+            {(() => {
+            const selectedDrink = drinkTypes.find((dt) => dt.id === selectedDrinkTypeId);
+            const espressoDrinks = [
+                "Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha",
+                "Breve", "Dirty Chai", "Drip Coffee"
+            ];
+            return selectedDrink && espressoDrinks.includes(selectedDrink.name) ? (
+                <h3 className="italic mb-2">12oz/16oz Double - 20oz Triple - 24oz/32oz Quad</h3>
+            ) : null;
+            })()}
+
             <div className="flex flex-wrap gap-2">
             {sizes.map((size) => (
                 <button
@@ -248,6 +270,7 @@ const OrderPage: React.FC = () => {
             </div>
         </div>
         )}
+
 
         {/* 4. Style */}
         {selectedDrinkTypeId && (() => {
@@ -280,27 +303,39 @@ const OrderPage: React.FC = () => {
 
 
         {/* 5. Shot */}
-        {selectedStyle && (
-        <div>
+        {selectedStyle && (() => {
+        const espressoDrinks = [
+            "Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha",
+            "Breve", "Dirty Chai", "Drip Coffee"
+        ];
+        const selectedDrink = drinkTypes.find((dt) => dt.id === selectedDrinkTypeId);
+        const showShots = selectedDrink ? espressoDrinks.includes(selectedDrink.name) : false;
+
+        if (!showShots) return null;
+
+        return (
+            <div>
             <h2 className="font-semibold mb-2">5. Select a Shot</h2>
             <div className="flex flex-wrap gap-2">
-            {drinkShots.map((shot) => (
+                {drinkShots.map((shot) => (
                 <button
-                key={shot.id}
-                className={`px-4 py-2 rounded border ${
+                    key={shot.id}
+                    className={`px-4 py-2 rounded border ${
                     selectedShots === shot.id ? "bg-pink-600 text-white" : "hover:bg-gray-100"
-                }`}
-                onClick={() => setSelectedShots(shot.id)}
+                    }`}
+                    onClick={() => setSelectedShots(shot.id)}
                 >
-                {shot.name}
+                    {shot.name}
                 </button>
-            ))}
+                ))}
             </div>
-        </div>
-        )}
+            </div>
+        );
+        })()}
+
 
         {/* 6. Milk */}
-        {selectedShots !== null && (
+        {selectedStyle && (!requiresShots || selectedShots !== null) && (
         <div>
             <h2 className="font-semibold mb-2">6. Choose Milk</h2>
             <div className="flex flex-wrap gap-2">
@@ -376,22 +411,34 @@ const OrderPage: React.FC = () => {
         <div className="mt-6">
             <h2 className="text-lg font-bold mb-2">Current Order</h2>
             <ul className="space-y-2">
-            {orderItems.map((item, index) => (
+            {orderItems.map((item, index) => {
+                const espressoDrinks = [
+                "Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha",
+                "Breve", "Dirty Chai", "Drip Coffee"
+                ];
+                const isEspresso = item.drinkType && espressoDrinks.includes(item.drinkType.name);
+
+                return (
                 <li key={index} className="p-3 bg-gray-100 rounded">
-                <div>
+                    <div>
                     <strong>{item.size}</strong> {item.drinkType?.name} ({item.category?.name})
-                </div>
-                <div>Style: {item.style?.name}</div>
-                <div>Milk: {item.milk?.name}</div>
-                <div>Shot: {item.shots?.name}</div>
-                {item.flavors.length > 0 && (
+                    </div>
+                    <div>Style: {item.style?.name}</div>
+                    <div>Milk: {item.milk?.name}</div>
+
+                    {isEspresso && (
+                    <div>Shot: {item.shots?.name}</div>
+                    )}
+
+                    {item.flavors.length > 0 && (
                     <div>Flavors: {item.flavors.map((f: any) => f.name).join(", ")}</div>
-                )}
-                {item.options.length > 0 && (
+                    )}
+                    {item.options.length > 0 && (
                     <div>Extras: {item.options.map((o: any) => o.name).join(", ")}</div>
-                )}
+                    )}
                 </li>
-            ))}
+                );
+            })}
             </ul>
         </div>
         )}
@@ -407,6 +454,19 @@ const OrderPage: React.FC = () => {
         >
         Add to Order
         </button>
+
+         {/* Checkout Button */}
+        <div className="mt-4 text-center">
+        <button
+            onClick={() => {
+            setIsCheckoutStarted(true);
+            console.log("Proceeding to checkout", orderItems);
+            }}
+            className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+            Proceed to Checkout
+        </button>
+        </div>
 
       </div>
     </div>

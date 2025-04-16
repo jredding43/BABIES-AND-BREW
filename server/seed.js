@@ -145,7 +145,7 @@ const seed = async () => {
     );
 
     // --- Milk Options ---
-    const milks = ["Whole", "2% Milk", "Almond Milk", "Oat Milk", "Soy Milk"];
+    const milks = ["Whole", "2% Milk", "Almond Milk", "Oat Milk", "Soy Milk", "Heavy Cream", "Lotus Cream", "None"];
     for (const milk of milks) {
       await pool.query(
         "INSERT INTO milk_options (name) VALUES ($1) ON CONFLICT (name) DO NOTHING",
@@ -179,7 +179,7 @@ const seed = async () => {
 
     // --- Flavors ---
     const flavors = [
-      "Almond", "Amaretto", "Apple", "Banana", "Blackberry", "Blueberry", "Brown Sugar",
+      "Add No Flavor", "Almond", "Amaretto", "Apple", "Banana", "Blackberry", "Blueberry", "Brown Sugar",
       "Butter Pecan", "Butterscotch", "Cake Batter", "Caramel", "Chai", "Cherry",
       "Chocolate", "Cinnamon", "Coconut", "Cookie Dough", "Cotton Candy", "Crème Brûlée",
       "Eggnog", "French Vanilla", "Gingerbread", "Grape", "Green Apple", "Hazelnut",
@@ -199,7 +199,7 @@ const seed = async () => {
 
     // --- Options ---
     const options = [
-      "Whipped Cream", "Drizzle", "Shot", "2 Shots", "3 shots", "White Chocolate Powder", "Heavy Cream", "Lotus Cream", "Soft Top", "Glitter",
+      "Whipped Cream", "Drizzle", "Shot", "2 Shots", "3 shots", "White Chocolate Powder", "Soft Top", "Glitter",
       "Topping", "Popping Pearl", "Orange Juice (2oz)", "Extra Cup", "Extra Tea Bag"
     ];
     for (const option of options) {
