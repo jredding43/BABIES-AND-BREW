@@ -167,15 +167,27 @@ const seed = async () => {
 
     // --- Options ---
     const options = [
-      "Whipped Cream", "Drizzle", "Shot", "2 Shots", "3 shots", "White Chocolate Powder", "Soft Top", "Glitter",
-      "Topping", "Popping Pearl", "Orange Juice (2oz)", "Extra Cup", "Extra Tea Bag"
+      { name: "Whipped Cream", price_adjustment: 0.50 },
+      { name: "Shot", price_adjustment: 0.50 },
+      { name: "2 Shots", price_adjustment: 1.00 },
+      { name: "3 Shots", price_adjustment: 1.50 },
+      { name: "White Chocolate Powder", price_adjustment: 0.25 },
+      { name: "Soft Top", price_adjustment: 1.00 },
+      { name: "Glitter", price_adjustment: 0.50 },
+      { name: "Toppings", price_adjustment: 0.75 },
+      { name: "Popping Pearls", price_adjustment: 1.00 },
+      { name: "Orange Juice (2oz)", price_adjustment: 0.50 },
+      { name: "Extra Cup", price_adjustment: 0.25 },
+      { name: "Extra Tea Bag", price_adjustment: 0.50 },
     ];
+
     for (const option of options) {
       await pool.query(
-        "INSERT INTO options (name) VALUES ($1) ON CONFLICT (name) DO NOTHING",
-        [option]
+        "INSERT INTO options (name, price_adjustment) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING",
+        [option.name, option.price_adjustment]
       );
     }
+    
 
     // --- Drink Type + Size Prices ---
   const drink_type_sizes = [

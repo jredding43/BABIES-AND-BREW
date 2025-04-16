@@ -151,29 +151,48 @@ const OrderPage: React.FC = () => {
   }, [selectedDrinkTypeId, selectedSize]);
   
   useEffect(() => {
-    if (basePrice === null) {
+    if (basePrice === null || isNaN(Number(basePrice))) {
       setTotalPrice(null);
       return;
     }
   
-    let total = basePrice;
+    let total: number = Number(basePrice);
   
-    // Milk
+    // --- Milk upcharge ---
     const milk = milkOptions.find((m) => m.name === selectedMilk);
-    if (milk?.price_adjustment) {
+    if (milk && typeof milk.price_adjustment === "number") {
+      total += milk.price_adjustment;
+    } else if (milk && milk.price_adjustment) {
       total += Number(milk.price_adjustment);
     }
   
-    // Flavors
+    // --- Flavor upcharge (first 2 free) ---
     const extraFlavors = Math.max(0, selectedFlavors.length - 2);
-    
     total += extraFlavors * 0.5;
   
-    setTotalPrice(Number(total.toFixed(2)));
-  }, [basePrice, selectedMilk, selectedFlavors, milkOptions]);
+    // --- Options (extras) ---
+    const selectedExtraOptions = options.filter((opt) =>
+      selectedOptions.includes(opt.id)
+    );
+    const optionsCost = selectedExtraOptions.reduce((sum, opt) => {
+      const adj = typeof opt.price_adjustment === "number"
+        ? opt.price_adjustment
+        : Number(opt.price_adjustment) || 0;
+      return sum + adj;
+    }, 0);
+    total += optionsCost;
   
-      
-
+    setTotalPrice(Number(total.toFixed(2)));
+  }, [
+    basePrice,
+    selectedMilk,
+    selectedFlavors,
+    selectedOptions,
+    milkOptions,
+    options,
+  ]);
+  
+  
 
   const filteredTypes = selectedCategoryId
     ? drinkTypes.filter((type) => type.category_id === selectedCategoryId)
@@ -254,6 +273,20 @@ const OrderPage: React.FC = () => {
         selectedMilk !== null &&
         (!requiresShots || selectedShots !== null); 
 
+
+    const selectedExtraOptions = options.filter((opt) =>
+        selectedOptions.includes(opt.id)
+        );
+        
+        const optionsCost = selectedExtraOptions.reduce((sum, opt) => {
+        const adj =
+            typeof opt.price_adjustment === "number"
+            ? opt.price_adjustment
+            : Number(opt.price_adjustment) || 0;
+        return sum + adj;
+        }, 0);
+          
+
   return (
     <div className="max-w-xl mx-auto p-4">
       <h1 className="text-3xl font-bold text-center mb-6">Build Your Drink</h1>
@@ -324,7 +357,7 @@ const OrderPage: React.FC = () => {
                 "Breve", "Dirty Chai", "Drip Coffee"
             ];
             return selectedDrink && espressoDrinks.includes(selectedDrink.name) ? (
-                <h3 className="italic mb-2">12oz/16oz Double - 20oz Triple - 24oz/32oz Quad</h3>
+                <h3 className="italic mb-2 text-sm text-blue-700">Shots per size 12oz/16oz Double - 20oz Triple - 24oz/32oz Quad</h3>
             ) : null;
             })()}
 
@@ -455,9 +488,7 @@ const OrderPage: React.FC = () => {
         {selectedMilk && (
         <div>
             <h2 className="font-semibold">7. Add Flavors</h2>
-            <h3 className="italic mb-2">
-            2 flavors per drink included. $0.50 for each additional flavor.
-            </h3>
+            <h3 className="italic mb-2 text-sm text-blue-700">2 flavors per drink included. $0.50 for each additional flavor. </h3>
 
             <div className="max-h-48 overflow-y-auto border rounded p-2">
             {[...flavors]
@@ -482,12 +513,14 @@ const OrderPage: React.FC = () => {
 
             {selectedFlavors.length > 0 && (
             <div className="mt-4 space-y-2">
-                <div className="font-semibold italic text-blue-700">
+                <div className="text-md text-black">
                 <strong>Selected Flavors:</strong>{" "}
-                {flavors
-                    .filter((f) => selectedFlavors.includes(f.id))
-                    .map((f) => f.name)
-                    .join(", ")}
+                <div className="text italic text-sm text-blue-700">
+                    {flavors
+                        .filter((f) => selectedFlavors.includes(f.id))
+                        .map((f) => f.name)
+                        .join(", ")}
+                </div>
                 </div>
 
                 {selectedFlavors.length > 2 && (
@@ -502,31 +535,53 @@ const OrderPage: React.FC = () => {
         </div>
         )}
 
-
-
         {/* 8. Extras */}
         {selectedFlavors.length > 0 && (
         <div>
             <h2 className="font-semibold mb-2">8. Add Extras</h2>
             <div className="flex flex-wrap gap-2">
-            {options.map((option) => (
+            {options.map((option) => {
+                const isSelected = selectedOptions.includes(option.id);
+                return (
                 <button
-                key={option.id}
-                className={`px-4 py-2 rounded border ${
-                    selectedOptions.includes(option.id) ? "bg-pink-600 text-white" : "hover:bg-gray-100"
-                }`}
-                onClick={() =>
+                    key={option.id}
+                    className={`px-4 py-2 rounded border flex items-center gap-1 ${
+                    isSelected ? "bg-pink-600 text-white" : "hover:bg-gray-100"
+                    }`}
+                    onClick={() =>
                     setSelectedOptions((prev) =>
-                    prev.includes(option.id)
+                        isSelected
                         ? prev.filter((id) => id !== option.id)
                         : [...prev, option.id]
                     )
-                }
+                    }
                 >
-                {option.name}
+                    <span>{option.name}</span>
+                    {option.price_adjustment > 0 && (
+                    <span className="text-sm italic text-green-700">
+                        (+${Number(option.price_adjustment || 0).toFixed(2)})
+                    </span>
+                    )}
                 </button>
-            ))}
+                );
+            })}
             </div>
+
+            {selectedExtraOptions.length > 0 && (
+            <div className="mt-2 space-y-1">
+                <div className="text-md text-black">
+                <strong>Selected Extras:</strong>{" "}
+                <div>
+                <span className="italic text-sm text-blue-700">
+                    {selectedExtraOptions.map((opt) => opt.name).join(", ")}
+                </span>
+                </div>
+                </div>
+                <div className="italic text-green-700">
+                Extras total: ${optionsCost.toFixed(2)}
+                </div>
+            </div>
+            )}
         </div>
         )}
 
@@ -541,6 +596,13 @@ const OrderPage: React.FC = () => {
                 ];
                 const isEspresso = item.drinkType && espressoDrinks.includes(item.drinkType.name);
 
+                const extrasCost = item.options?.reduce((sum: number, opt: any) => {
+                const adj = typeof opt.price_adjustment === "number"
+                    ? opt.price_adjustment
+                    : Number(opt.price_adjustment) || 0;
+                return sum + adj;
+                }, 0);
+
                 return (
                 <li key={index} className="p-4 bg-gray-100 rounded shadow">
                     <div>
@@ -548,17 +610,19 @@ const OrderPage: React.FC = () => {
                     </div>
                     <div>Style: {item.style?.name}</div>
                     <div>Milk: {item.milk?.name}</div>
-                    {isEspresso && <div>Shot: {item.shots?.name}</div>}
-                    {item.flavors.length > 0 && (
+                        {isEspresso && <div>Shot: {item.shots?.name}</div>}
+                        {item.flavors.length > 0 && (
                     <div>Flavors: {item.flavors.map((f: any) => f.name).join(", ")}</div>
                     )}
-                    {item.options.length > 0 && (
-                    <div>Extras: {item.options.map((o: any) => o.name).join(", ")}</div>
+                        {item.options.length > 0 && (
+                    <>
+                    <div>Extras: {item.options.map((o: any) => o.name).join(", ")}</div>    
+                    </>
                     )}
                     <div className="font-semibold text-green-700 mt-1">
-                    Total: ${item.price?.toFixed(2)}
+                        Total: ${item.price?.toFixed(2)}
                     </div>
-                    
+
                     <div className="flex gap-2 mt-2">
                     <button
                         className="px-3 py-1 bg-yellow-400 text-black rounded hover:bg-yellow-500"
@@ -580,31 +644,38 @@ const OrderPage: React.FC = () => {
         </div>
         )}
 
-
+        
         <button
         onClick={handleAddOrder}
         disabled={!isOrderReady}
         className={`mt-4 px-4 py-2 rounded transition ${
             isOrderReady
-            ? "bg-green-600 text-white hover:bg-green-700"
+            ? "bg-white text-black border-1 rounded hover:bg-green-500 hover:text-white"
             : "bg-gray-300 text-gray-600 cursor-not-allowed"
         }`}
         >
         Add to Order
         </button>
 
-         {/* Checkout Button */}
+        {typeof totalPrice === "number" && !isNaN(totalPrice) && (
+        <div className="text-lg font-semibold text-green-700">
+            Total Price: ${totalPrice.toFixed(2)}
+        </div>
+        )}
+
+        {/* Checkout Button */}
         <div className="mt-4 text-center">
         <button
             onClick={() => {
             setIsCheckoutStarted(true);
             console.log("Proceeding to checkout", orderItems);
             }}
-            className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            className="px-6 py-3 bg-white text-black border rounded hover:bg-blue-700 transition hover:text-white"
         >
             Proceed to Checkout
         </button>
         </div>
+
 
       </div>
     </div>
