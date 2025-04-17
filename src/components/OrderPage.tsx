@@ -66,15 +66,13 @@ const OrderPage: React.FC = () => {
 
   const [orderItems, setOrderItems] = useState<any[]>([]);
   const [, setIsCheckoutStarted] = useState(false);
-  const [price, setPrice] = useState<number | null>(null);
+  const [price, ] = useState<number | null>(null);
   const [basePrice, setBasePrice] = useState<number | null>(null);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
 
   const [notes, setNotes] = useState<string>("");
   const [orderName, setOrderName] = useState<string>("");
   const [prebuiltDrinks, setPrebuiltDrinks] = useState<any[]>([]);
-
-
 
   const drinkStyleOptions: Record<string, string[]> = {
     // Espresso 
@@ -195,23 +193,22 @@ const OrderPage: React.FC = () => {
     options,
   ]);
   
+  //Update prebuilt drinks
   useEffect(() => {
     const fetchPrebuiltDrinks = async () => {
-      const selectedDrink = drinkTypes.find((dt) => dt.id === selectedDrinkTypeId);
-      if (selectedDrink?.name === "Select A Drink") {
-        try {
-          const res = await fetch("http://localhost:5000/api/prebuilt_drinks");
-          const data = await res.json();
-          setPrebuiltDrinks(data);
-        } catch (err) {
-          console.error("Failed to fetch prebuilt drinks", err);
-        }
-      } else {
-        setPrebuiltDrinks([]);
+      try {
+        const res = await fetch("http://localhost:5000/api/prebuilt_drinks");
+        const data = await res.json();
+        setPrebuiltDrinks(data);
+      } catch (err) {
+        console.error("Failed to fetch prebuilt drinks", err);
       }
     };
+  
     fetchPrebuiltDrinks();
-  }, [selectedDrinkTypeId, drinkTypes]);
+  }, []);
+  
+  
 
   const handleSelectPrebuiltDrink = (drink: any) => {
     const drinkType = drinkTypes.find(dt => dt.name.toLowerCase() === drink.drink_type_name.toLowerCase());
@@ -325,8 +322,16 @@ const OrderPage: React.FC = () => {
             : Number(opt.price_adjustment) || 0;
         return sum + adj;
         }, 0);
-          
 
+    const filteredPrebuiltDrinks = prebuiltDrinks.filter((drink) => {
+        const selectedCategory = categories.find((cat) => cat.id === selectedCategoryId);
+        if (!selectedCategory || !drink.category_name) return false;
+        
+        return drink.category_name.trim().toLowerCase() === selectedCategory.name.trim().toLowerCase();
+        });
+        
+        
+        
   return (
     <div className="max-w-xl mx-auto p-4">
       <h1 className="text-3xl font-bold text-center mb-6">Build Your Drink</h1>
@@ -383,23 +388,22 @@ const OrderPage: React.FC = () => {
             ))}
             </div>
 
-            {prebuiltDrinks.length > 0 && (
-            <div className="mb-4">
+            {selectedCategoryId && filteredPrebuiltDrinks.length > 0 && (
+            <div>
+                <div className="font-bold text-blue-700 p-4"> OR </div>
                 <label className="block font-semibold mb-1">Choose a Prebuilt Drink</label>
                 <select
                 className="w-full p-2 border rounded bg-white shadow"
                 onChange={(e) => {
                     const selectedIndex = parseInt(e.target.value);
-                    if (!isNaN(selectedIndex) && prebuiltDrinks[selectedIndex]) {
-                    handleSelectPrebuiltDrink(prebuiltDrinks[selectedIndex]);
+                    if (!isNaN(selectedIndex) && filteredPrebuiltDrinks[selectedIndex]) {
+                    handleSelectPrebuiltDrink(filteredPrebuiltDrinks[selectedIndex]);
                     }
                 }}
                 defaultValue=""
                 >
-                <option value="" disabled>
-                    -- Select a drink --
-                </option>
-                {prebuiltDrinks.map((drink, index) => (
+                <option value="" disabled>-- Select a drink --</option>
+                {filteredPrebuiltDrinks.map((drink, index) => (
                     <option key={drink.id || index} value={index}>
                     {drink.name} - {drink.size} - {drink.style}
                     </option>
@@ -407,6 +411,8 @@ const OrderPage: React.FC = () => {
                 </select>
             </div>
             )}
+
+
             </div>
             )}
 

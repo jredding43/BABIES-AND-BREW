@@ -3,26 +3,30 @@ const pool = require("./db");
 const seed = async () => {
   try {
     await pool.query(`
-      -- Clean all data while preserving schema
-      DELETE FROM order_items;
-      DELETE FROM orders;
-      DELETE FROM drink_options;
-      DELETE FROM options;
-      DELETE FROM drink_flavors;
-      DELETE FROM flavors;
-      DELETE FROM milk_options;
-      DELETE FROM drink_sizes;
-      DELETE FROM sizes;
-      DELETE FROM size_other;
-      DELETE FROM drinks;
-      DELETE FROM drink_types;
-      DELETE FROM categories;
-      DELETE FROM drink_styles;
-      DELETE FROM styles;
-      DELETE FROM drink_shots;
-      DELETE FROM shots;
-      DELETE FROM drink_type_sizes;
+      TRUNCATE 
+        prebuilt_drinks,
+        order_items,
+        orders,
+        drink_options,
+        options,
+        drink_flavors,
+        flavors,
+        milk_options,
+        drink_sizes,
+        sizes,
+        size_other,
+        drinks,
+        drink_types,
+        categories,
+        drink_styles,
+        styles,
+        drink_shots,
+        shots,
+        drink_type_sizes
+      RESTART IDENTITY CASCADE;
     `);
+    
+    
 
     console.log(" Seeding started...");
 
@@ -59,7 +63,7 @@ const seed = async () => {
 
     // --- Drink Types ---
     const drinkTypes = {
-      Espresso: ["Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha", "Breve", "Dirty Chai", "Drip Coffee", "Select A Drink"],
+      Espresso: ["Americano", "Latte", "Signature Latte", "Mocha", "Signature Mocha", "Breve", "Dirty Chai", "Drip Coffee"],
       "Energy Drink": ["Lotus", "Redbull Spritzer"],
       "Non-Coffee": ["Italian Soda", "Hot Chocolate", "Lemonade", "Smoothie"],
       Tea: ["Tea", "Chai", "London Fog", "Matcha Latte"],
@@ -247,13 +251,41 @@ const seed = async () => {
       options: ["Whipped Cream"],
       price: 5.50,
     },
+    {
+      name: "White Angel",
+      category: "Espresso",
+      drinkType: "Latte",
+      size: "16oz",
+      style: "Iced",
+      milkOption: "2% Milk",
+      shot: "Regular",
+      flavors: ["Hazelnut", "Vanilla", "Cinnamon"],
+      options: ["White Chocolate Powder"],
+      price: 5.50,
+    },
+    {
+      name: "Tree Green",
+      category: "Energy Drink",
+      drinkType: "Redbull Spritzer",
+      size: "16oz",
+      style: "Iced",
+      milkOption: "Heavy Cream + $1.00",
+      shot: "",
+      flavors: ["Blueberry", "Vanilla", "Watermelon"],
+      options: ["Whipped Cream"],
+      price: 5.50,
+    },
   ];
   
   for (const drink of prebuiltDrinks) {
-    const categoryId = await getIdByName("categories", "Espresso");
+    const categoryId = await getIdByName("categories", drink.category);
     const drink_type_id = await getIdByName("drink_types", drink.drinkType);
     const milk_option_id = await getIdByName("milk_options", drink.milkOption);
-    const shot_id = await getIdByName("shots", drink.shot);
+    let shot_id = null;
+    if (drink.shot && drink.shot.trim() !== "") {
+      shot_id = await getIdByName("shots", drink.shot);
+    }
+
   
     const flavor_ids = await Promise.all(
       drink.flavors.map((name) => getIdByName("flavors", name))
