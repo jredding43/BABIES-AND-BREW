@@ -382,20 +382,33 @@ const OrderPage: React.FC = () => {
                 </button>
             ))}
             </div>
-        </div>
-        )}
 
-        {prebuiltDrinks.map((drink, index) => (
-        <button
-            key={index}
-            onClick={() => handleSelectPrebuiltDrink(drink)}
-            className="block w-full text-left border rounded p-4 bg-gray-50 shadow hover:bg-pink-100 transition"
-        >
-            <div className="font-bold">{drink.name}</div>
-        </button>
-        ))}
-
-
+            {prebuiltDrinks.length > 0 && (
+            <div className="mb-4">
+                <label className="block font-semibold mb-1">Choose a Prebuilt Drink</label>
+                <select
+                className="w-full p-2 border rounded bg-white shadow"
+                onChange={(e) => {
+                    const selectedIndex = parseInt(e.target.value);
+                    if (!isNaN(selectedIndex) && prebuiltDrinks[selectedIndex]) {
+                    handleSelectPrebuiltDrink(prebuiltDrinks[selectedIndex]);
+                    }
+                }}
+                defaultValue=""
+                >
+                <option value="" disabled>
+                    -- Select a drink --
+                </option>
+                {prebuiltDrinks.map((drink, index) => (
+                    <option key={drink.id || index} value={index}>
+                    {drink.name} - {drink.size} - {drink.style}
+                    </option>
+                ))}
+                </select>
+            </div>
+            )}
+            </div>
+            )}
 
         {/* 3. Size */}
         {selectedDrinkTypeId && (
