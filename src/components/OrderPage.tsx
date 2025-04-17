@@ -70,6 +70,9 @@ const OrderPage: React.FC = () => {
   const [basePrice, setBasePrice] = useState<number | null>(null);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
 
+  const [notes, setNotes] = useState<string>("");
+  const [orderName, setOrderName] = useState<string>("");
+  const [prebuiltDrinks, setPrebuiltDrinks] = useState<any[]>([]);
 
 
 
@@ -192,6 +195,39 @@ const OrderPage: React.FC = () => {
     options,
   ]);
   
+  useEffect(() => {
+    const fetchPrebuiltDrinks = async () => {
+      const selectedDrink = drinkTypes.find((dt) => dt.id === selectedDrinkTypeId);
+      if (selectedDrink?.name === "Select A Drink") {
+        try {
+          const res = await fetch("http://localhost:5000/api/prebuilt_drinks");
+          const data = await res.json();
+          setPrebuiltDrinks(data);
+        } catch (err) {
+          console.error("Failed to fetch prebuilt drinks", err);
+        }
+      } else {
+        setPrebuiltDrinks([]);
+      }
+    };
+    fetchPrebuiltDrinks();
+  }, [selectedDrinkTypeId, drinkTypes]);
+
+  const handleSelectPrebuiltDrink = (drink: any) => {
+    const drinkType = drinkTypes.find(dt => dt.name.toLowerCase() === drink.drink_type_name.toLowerCase());
+    const category = categories.find(cat => cat.name.toLowerCase() === drink.category_name.toLowerCase());
+    const milk = milkOptions.find(m => m.name.toLowerCase() === drink.milk_name.toLowerCase());
+    const shot = drinkShots.find(s => s.name.toLowerCase() === drink.shot_name?.toLowerCase());
+  
+    setSelectedCategoryId(category?.id || null);
+    setSelectedDrinkTypeId(drinkType?.id || null);
+    setSelectedSize(drink.size || null);
+    setSelectedStyle(drink.style || null);
+    setSelectedMilk(milk?.name || null);
+    setSelectedShots(shot?.id || null);
+    setSelectedFlavors(drink.flavor_ids || []);
+    setSelectedOptions(drink.option_ids || []);
+  };
   
 
   const filteredTypes = selectedCategoryId
@@ -217,6 +253,8 @@ const OrderPage: React.FC = () => {
           flavors: selectedFlavorObjects,
           options: selectedOptionObjects,
           price: totalPrice,
+          notes,
+          orderName,
         };
       
         setOrderItems((prevItems) => [...prevItems, newOrderItem]);
@@ -254,6 +292,8 @@ const OrderPage: React.FC = () => {
         // Optionally remove item from cart so it can be replaced after editing
         setOrderItems((prev) => prev.filter((_, i) => i !== index));
       };
+      
+
       
 
     //View shots or hide on choice
@@ -344,6 +384,18 @@ const OrderPage: React.FC = () => {
             </div>
         </div>
         )}
+
+        {prebuiltDrinks.map((drink, index) => (
+        <button
+            key={index}
+            onClick={() => handleSelectPrebuiltDrink(drink)}
+            className="block w-full text-left border rounded p-4 bg-gray-50 shadow hover:bg-pink-100 transition"
+        >
+            <div className="font-bold">{drink.name}</div>
+        </button>
+        ))}
+
+
 
         {/* 3. Size */}
         {selectedDrinkTypeId && (
@@ -582,6 +634,29 @@ const OrderPage: React.FC = () => {
                 </div>
             </div>
             )}
+
+        <div>
+            <label className="block font-semibold mb-1">Order Name </label>
+            <textarea
+                className="w-full p-2 border rounded"
+                rows={2}
+                placeholder="name"
+                value={orderName}
+                onChange={(e) => setOrderName(e.target.value)}
+            />
+        </div>
+            
+
+        <div>
+            <label className="block font-semibold mb-1">Special Notes</label>
+            <textarea
+                className="w-full p-2 border rounded"
+                rows={2}
+                placeholder="e.g. no ice, light whip, extra hot"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+            />
+        </div>
         </div>
         )}
 
@@ -596,31 +671,44 @@ const OrderPage: React.FC = () => {
                 ];
                 const isEspresso = item.drinkType && espressoDrinks.includes(item.drinkType.name);
 
-                const extrasCost = item.options?.reduce((sum: number, opt: any) => {
-                const adj = typeof opt.price_adjustment === "number"
-                    ? opt.price_adjustment
-                    : Number(opt.price_adjustment) || 0;
-                return sum + adj;
-                }, 0);
-
                 return (
                 <li key={index} className="p-4 bg-gray-100 rounded shadow">
+
+                    {/* Order Name*/}
+                    <div className="text-red-500 font-semibold text-md mt-2">
+                    {item.orderName && (
+                    <div className="text-lg italic text-blue-700">
+                        Order Name: {item.orderName}
+                    </div>
+                    )}
+                    </div>
+
                     <div>
                     <strong>{item.size}</strong> {item.drinkType?.name} ({item.category?.name})
                     </div>
                     <div>Style: {item.style?.name}</div>
                     <div>Milk: {item.milk?.name}</div>
-                        {isEspresso && <div>Shot: {item.shots?.name}</div>}
-                        {item.flavors.length > 0 && (
+                    {isEspresso && <div>Shot: {item.shots?.name}</div>}
+                    {item.flavors.length > 0 && (
                     <div>Flavors: {item.flavors.map((f: any) => f.name).join(", ")}</div>
                     )}
-                        {item.options.length > 0 && (
+                    {item.options.length > 0 && (
                     <>
-                    <div>Extras: {item.options.map((o: any) => o.name).join(", ")}</div>    
+                    <div>Extras: {item.options.map((o: any) => o.name).join(", ")}</div>
                     </>
                     )}
+
+                    {/* Item Notes*/}
+                    <div className="text-red-500 font-semibold text-md mt-2">
+                    {item.notes && (
+                    <div className="text-sm italic text-red-500">
+                        Note: {item.notes}
+                    </div>
+                    )}
+                    </div>
+
                     <div className="font-semibold text-green-700 mt-1">
-                        Total: ${item.price?.toFixed(2)}
+                    Total: ${item.price?.toFixed(2)}
                     </div>
 
                     <div className="flex gap-2 mt-2">
@@ -667,15 +755,21 @@ const OrderPage: React.FC = () => {
         <div className="mt-4 text-center">
         <button
             onClick={() => {
-            setIsCheckoutStarted(true);
-            console.log("Proceeding to checkout", orderItems);
+            if (orderItems.length > 0) {
+                setIsCheckoutStarted(true);
+                console.log("Proceeding to checkout", orderItems);
+            }
             }}
-            className="px-6 py-3 bg-white text-black border rounded hover:bg-blue-700 transition hover:text-white"
+            disabled={orderItems.length === 0}
+            className={`px-6 py-3 border rounded transition ${
+            orderItems.length === 0
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-white text-black hover:bg-blue-700 hover:text-white"
+            }`}
         >
             Proceed to Checkout
         </button>
         </div>
-
 
       </div>
     </div>

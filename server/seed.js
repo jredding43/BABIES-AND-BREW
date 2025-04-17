@@ -26,6 +26,13 @@ const seed = async () => {
 
     console.log(" Seeding started...");
 
+    async function getIdByName(table, name) {
+      const res = await pool.query(`SELECT id FROM ${table} WHERE name = $1 LIMIT 1`, [name]);
+      if (res.rows.length === 0) throw new Error(`No entry found in ${table} with name: ${name}`);
+      return res.rows[0].id;
+    }
+    
+
     // --- Categories ---
     const categories = [
       "Espresso",
@@ -179,6 +186,8 @@ const seed = async () => {
       { name: "Orange Juice (2oz)", price_adjustment: 0.50 },
       { name: "Extra Cup", price_adjustment: 0.25 },
       { name: "Extra Tea Bag", price_adjustment: 0.50 },
+      { name: "No Ice", price_adjustment: 0.75 },
+      { name: "Light Ice", price_adjustment: 0.50 },
     ];
 
     for (const option of options) {
@@ -225,7 +234,56 @@ const seed = async () => {
     }
   }
   
-
+  const prebuiltDrinks = [
+    {
+      name: "White Chocolate Mocha",
+      category: "Espresso",
+      drinkType: "Mocha",
+      size: "16oz",
+      style: "Hot",
+      milkOption: "2% Milk",
+      shot: "Regular",
+      flavors: ["Almond", "Vanilla"],
+      options: ["Whipped Cream"],
+      price: 5.50,
+    },
+  ];
+  
+  for (const drink of prebuiltDrinks) {
+    const categoryId = await getIdByName("categories", "Espresso");
+    const drink_type_id = await getIdByName("drink_types", drink.drinkType);
+    const milk_option_id = await getIdByName("milk_options", drink.milkOption);
+    const shot_id = await getIdByName("shots", drink.shot);
+  
+    const flavor_ids = await Promise.all(
+      drink.flavors.map((name) => getIdByName("flavors", name))
+    );
+  
+    const option_ids = await Promise.all(
+      drink.options.map((name) => getIdByName("options", name))
+    );
+  
+    await pool.query(
+      `INSERT INTO prebuilt_drinks 
+       (name, category_id, drink_type_id, size, style, milk_option_id, shot_id, flavor_ids, option_ids, price)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       ON CONFLICT (name) DO NOTHING`,
+      [
+        drink.name,
+        categoryId,
+        drink_type_id,
+        drink.size,
+        drink.style,
+        milk_option_id,
+        shot_id,
+        flavor_ids,
+        option_ids,
+        drink.price,
+      ]
+    );
+  }
+  
+  
 
 
     console.log(" Seeding complete.");

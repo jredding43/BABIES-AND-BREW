@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
   res.send("Backend is live and CORS is enabled!");
 });
 
-// --- POST: Submit drink ---
+// --- POST: Submit drink survey ---
 app.post("/submit-drink", async (req, res) => {
   const { answers } = req.body;
   try {
@@ -54,7 +54,7 @@ const registerTableEndpoint = (table) => {
   });
 };
 
-// --- Register all GET endpoints ---
+// --- Register static table endpoints ---
 [
   "categories",
   "drink_types",
@@ -72,6 +72,36 @@ const registerTableEndpoint = (table) => {
   "shots",
   "drink_type_sizes"
 ].forEach(registerTableEndpoint);
+
+// --- Custom GET: Prebuilt drinks ---
+app.get("/api/prebuilt_drinks", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        pd.id,
+        pd.name,
+        pd.size,
+        pd.style,
+        pd.price,
+        dt.name AS drink_type_name,
+        c.name AS category_name,
+        mo.name AS milk_name,
+        s.name AS shot_name,
+        pd.flavor_ids,
+        pd.option_ids
+      FROM prebuilt_drinks pd
+      JOIN drink_types dt ON pd.drink_type_id = dt.id
+      JOIN categories c ON pd.category_id = c.id
+      LEFT JOIN milk_options mo ON pd.milk_option_id = mo.id
+      LEFT JOIN shots s ON pd.shot_id = s.id
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Failed to fetch prebuilt drinks", err);
+    res.status(500).send("Error fetching prebuilt drinks");
+  }
+});
+
 
 // --- GET: Price from drink_type_sizes ---
 app.get("/api/pricing", async (req, res) => {
@@ -103,8 +133,6 @@ app.get("/api/pricing", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch price" });
   }
 });
-
-
 
 // --- Start Server ---
 app.listen(port, () => {
