@@ -308,6 +308,7 @@ const OrderPage: React.FC = () => {
         selectedSize !== null &&
         selectedStyle !== null &&
         selectedMilk !== null &&
+        orderName.trim() != "" &&
         (!requiresShots || selectedShots !== null); 
 
 
@@ -654,24 +655,28 @@ const OrderPage: React.FC = () => {
             </div>
             )}
 
+        {/* Order Name */}
         <div>
-            <label className="block font-semibold mb-1">Order Name </label>
-            <textarea
-                className="w-full p-2 border rounded"
-                rows={2}
-                placeholder="name"
-                value={orderName}
-                onChange={(e) => setOrderName(e.target.value)}
-            />
+          <label className="block font-semibold mb-1">Order Name</label>
+          <textarea
+            className="w-full p-2 border rounded"
+            rows={2}
+            placeholder="e.g. Jack's Drink"
+            value={orderName}
+            onChange={(e) => setOrderName(e.target.value)}
+          />
+          {orderName.trim() === "" && (
+            <div className="text-red-500 text-sm mb-2">Order Name is required</div>
+          )}
         </div>
-            
 
+        {/* Notes */}
         <div>
             <label className="block font-semibold mb-1">Special Notes</label>
             <textarea
                 className="w-full p-2 border rounded"
                 rows={2}
-                placeholder="e.g. no ice, light whip, extra hot"
+                placeholder="e.g. extra hot"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
             />

@@ -1,7 +1,8 @@
 import About from "./About";
 import Profiles from "./Profiles";
 import Footer from "./Footer";
-import { FaClock, FaGift, FaStar } from "react-icons/fa";
+import FAQs from "./FAQS";
+import { FaClock, FaGift, FaStar, FaPhone } from "react-icons/fa";
 
 
 const MainContent = () => {
@@ -13,6 +14,16 @@ const MainContent = () => {
 
         {/* Sidebar  */}
         <div className="w-full md:w-1/3 space-y-8 rounded ">
+
+          <div className="bg-orange-50 p-4 rounded shadow">
+            <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2 mb-2">
+                <FaPhone /> Contact Us
+            </h3>
+            <ul className="text-sm text-gray-700">
+                <li>Phone: (999)999-9999</li>
+            </ul>
+            </div>
+
             <div className="bg-orange-50 p-4 rounded shadow">
             <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2 mb-2">
                 <FaClock /> Hours of Operation
@@ -50,7 +61,9 @@ const MainContent = () => {
 
         </div>
         <Profiles />
-      </div>
+        <FAQs />
+        </div>
+        
     </div>
     <Footer />
     </>
