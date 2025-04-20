@@ -108,7 +108,9 @@ const OrderPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
 
-      const baseUrl = import.meta.env.VITE_API_BASE_URL;
+      const baseUrl =
+      import.meta.env.VITE_API_BASE_URL || "https://Babies-and-Brew.onrender.com";
+
       const [catRes, sizeRes, typesRes, milkRes, flavorRes, optionRes, stylesRes, shotRes] = await Promise.all([
         fetch(`${baseUrl}/api/categories`),
         fetch(`${baseUrl}/api/sizes`),
