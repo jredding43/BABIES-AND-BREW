@@ -73,6 +73,8 @@ const OrderPage: React.FC = () => {
   const [notes, setNotes] = useState<string>("");
   const [orderName, setOrderName] = useState<string>("");
   const [prebuiltDrinks, setPrebuiltDrinks] = useState<any[]>([]);
+  const baseUrl = "https://client-survey-backend.onrender.com";
+
 
   const drinkStyleOptions: Record<string, string[]> = {
     // Espresso 
@@ -139,7 +141,7 @@ const OrderPage: React.FC = () => {
       if (selectedDrinkTypeId && selectedSize) {
         try {
           const res = await fetch(
-            `${import.meta.env.VITE_API_BASE_URL}/api/pricing?drink_type_id=${selectedDrinkTypeId}&size=${encodeURIComponent(selectedSize)}`
+            `${baseUrl}/api/pricing?drink_type_id=${selectedDrinkTypeId}&size=${encodeURIComponent(selectedSize)}`
           );
           const data = await res.json();
           setBasePrice(data.price);
@@ -200,7 +202,7 @@ const OrderPage: React.FC = () => {
   useEffect(() => {
     const fetchPrebuiltDrinks = async () => {
       try {
-        const res = await fetch("${import.meta.env.VITE_API_BASE_URL}/api/prebuilt_drinks");
+        const res = await fetch('${baseUrl}/api/prebuilt_drinks');
         const data = await res.json();
         setPrebuiltDrinks(data);
       } catch (err) {

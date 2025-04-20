@@ -9,8 +9,7 @@ const port = process.env.PORT || 5000;
 // --- CORS Configuration ---
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://feedback.r43digitaltech.com",
-  "https://jredding43.github.io"
+  "https://jredding43.github.io" 
 ];
 
 const corsOptions = {
