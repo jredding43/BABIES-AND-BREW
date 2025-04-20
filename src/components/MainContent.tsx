@@ -2,6 +2,7 @@ import About from "./About";
 import Profiles from "./Profiles";
 import Footer from "./Footer";
 import FAQs from "./FAQS";
+import EventDetails from "./EventDetails";
 import { FaClock, FaGift, FaStar, FaPhone } from "react-icons/fa";
 
 
@@ -15,7 +16,7 @@ const MainContent = () => {
         {/* Sidebar  */}
         <div className="w-full md:w-1/3 space-y-8 rounded ">
 
-          <div className="bg-orange-50 p-4 rounded shadow">
+          <div className="bg-orange-50 p-4 rounded-2 shadow">
             <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2 mb-2">
                 <FaPhone /> Contact Us
             </h3>
@@ -24,7 +25,7 @@ const MainContent = () => {
             </ul>
             </div>
 
-            <div className="bg-orange-50 p-4 rounded shadow">
+            <div className="bg-orange-50 p-4 rounded-2 shadow">
             <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2 mb-2">
                 <FaClock /> Hours of Operation
             </h3>
@@ -35,7 +36,7 @@ const MainContent = () => {
             </ul>
             </div>
 
-            <div className="bg-orange-50 p-4 rounded shadow">
+            <div className="bg-orange-50 p-4 rounded-2 shadow">
             <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2 mb-2">
                 <FaGift /> Gift Cards
             </h3>
@@ -44,7 +45,7 @@ const MainContent = () => {
             </p>
             </div>
 
-            <div className="bg-orange-50 p-4 rounded shadow">
+            <div className="bg-orange-50 p-4 rounded-2 shadow">
             <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2 mb-2">
                 <FaStar /> Rewards Program
             </h3>
@@ -61,6 +62,9 @@ const MainContent = () => {
 
         </div>
         <Profiles />
+        
+        <EventDetails/>
+
         <FAQs />
         </div>
         
