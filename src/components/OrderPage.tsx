@@ -107,15 +107,17 @@ const OrderPage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+
+      const baseUrl = import.meta.env.VITE_API_BASE_URL;
       const [catRes, sizeRes, typesRes, milkRes, flavorRes, optionRes, stylesRes, shotRes] = await Promise.all([
-        fetch("http://localhost:5000/api/categories"),
-        fetch("http://localhost:5000/api/sizes"),
-        fetch("http://localhost:5000/api/drink_types"),
-        fetch("http://localhost:5000/api/milk_options"),
-        fetch("http://localhost:5000/api/flavors"),
-        fetch("http://localhost:5000/api/options"),
-        fetch("http://localhost:5000/api/styles"),
-        fetch("http://localhost:5000/api/shots"),
+        fetch(`${baseUrl}/api/categories`),
+        fetch(`${baseUrl}/api/sizes`),
+        fetch(`${baseUrl}/api/drink_types`),
+        fetch(`${baseUrl}/api/milk_options`),
+        fetch(`${baseUrl}/api/flavors`),
+        fetch(`${baseUrl}/api/options`),
+        fetch(`${baseUrl}/api/styles`),
+        fetch(`${baseUrl}/api/shots`),
       ]);
 
       setCategories(await catRes.json());
@@ -136,7 +138,7 @@ const OrderPage: React.FC = () => {
       if (selectedDrinkTypeId && selectedSize) {
         try {
           const res = await fetch(
-            `http://localhost:5000/api/pricing?drink_type_id=${selectedDrinkTypeId}&size=${encodeURIComponent(selectedSize)}`
+            `${import.meta.env.VITE_API_BASE_URL}/api/pricing?drink_type_id=${selectedDrinkTypeId}&size=${encodeURIComponent(selectedSize)}`
           );
           const data = await res.json();
           setBasePrice(data.price);
@@ -197,7 +199,7 @@ const OrderPage: React.FC = () => {
   useEffect(() => {
     const fetchPrebuiltDrinks = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/prebuilt_drinks");
+        const res = await fetch("${import.meta.env.VITE_API_BASE_URL}/api/prebuilt_drinks");
         const data = await res.json();
         setPrebuiltDrinks(data);
       } catch (err) {
