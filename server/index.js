@@ -7,13 +7,12 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // --- CORS Configuration ---
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://jredding43.github.io"
-];
-
 const corsOptions = {
   origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "https://jredding43.github.io",
+    ];
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -23,7 +22,6 @@ const corsOptions = {
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
 };
-
 
 app.use(cors(corsOptions));
 
