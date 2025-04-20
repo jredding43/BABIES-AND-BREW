@@ -109,7 +109,7 @@ const OrderPage: React.FC = () => {
     const fetchData = async () => {
 
       const baseUrl =
-      import.meta.env.VITE_API_BASE_URL || "https://Babies-and-Brew.onrender.com";
+      import.meta.env.VITE_API_BASE_URL || "https://client-survey-backend.onrender.com";
 
       const [catRes, sizeRes, typesRes, milkRes, flavorRes, optionRes, stylesRes, shotRes] = await Promise.all([
         fetch(`${baseUrl}/api/categories`),
